@@ -1,0 +1,95 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f1115;
+  --text: #f2f4f8;
+  --muted: #a8b0bf;
+  --border: #2a2f3a;
+  --focus: #6ea8fe;
+  --danger: #ff6b6b;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  width: 100%;
+  background: #151925;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  margin: 0;
+}
+
+textarea {
+  min-height: 92px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(110, 168, 254, 0.8);
+  box-shadow: 0 0 0 3px rgba(110, 168, 254, 0.22);
+}
+
+button {
+  background: #1a2234;
+  border: 1px solid #2c3a57;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1f2a40;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.container {
+  max-width: 720px;
+  padding: 20px;
+  margin: 0 auto;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+
