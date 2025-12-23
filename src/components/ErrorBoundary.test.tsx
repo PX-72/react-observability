@@ -1,29 +1,34 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import { ErrorBoundary } from "./ErrorBoundary";
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { ErrorBoundary } from './ErrorBoundary';
 
-vi.mock("../telemetry/datadog", () => ({
-  reportError: vi.fn(),
+vi.mock('../telemetry/rum', () => ({
+  rum: {
+    init: vi.fn(),
+    addError: vi.fn(),
+    addAction: vi.fn(),
+    addTiming: vi.fn(),
+  },
 }));
 
-const { reportError } = await import("../telemetry/datadog");
+const { rum } = await import('../telemetry/rum');
 
-function Boom() {
-  throw new Error("boom");
+function ComponentWithError(): JSX.Element {
+  throw new Error('error');
 }
 
-describe("ErrorBoundary", () => {
-  it("renders fallback UI and reports error", async () => {
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+describe('ErrorBoundary', () => {
+  it('renders fallback UI and reports error', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(
       <ErrorBoundary>
-        <Boom />
+        <ComponentWithError />
       </ErrorBoundary>,
     );
 
     expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
-    expect(reportError).toHaveBeenCalledTimes(1);
+    expect(rum.addError).toHaveBeenCalledTimes(1);
 
     errorSpy.mockRestore();
   });

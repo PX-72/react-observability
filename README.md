@@ -1,33 +1,50 @@
-# Super Simple React Observability Reference App (Datadog RUM + W3C Trace Context)
+# React Observability Reference App (Datadog RUM + Datadog Logs + W3C Trace Context)
 
-Small reference implementation for wiring frontend observability and trace correlation in a React application.
+Small reference app showing three separate things:
 
-It focuses on two things:
+- **Datadog RUM**: session/view timeline + RUM Explorer events
+- **Datadog Logs**: log events in Log Explorer
+- **W3C Trace Context**: `traceparent` generation and propagation on `fetch`
 
-- Datadog RUM initialization with **first-party tracing scoping** (`allowedTracingUrls`)
-- Generation and propagation of a **W3C `traceparent`** header 
+## Datadog RUM (Session Explorer / RUM Explorer)
 
-It's
+RUM is initialized in `src/telemetry/datadogRum.ts` and exposed via `src/telemetry/rum.ts`.
 
-- initializing RUM once
-- keeping tracing scoped to endpoints
-- making trace context propagation inspectable
+- **Auto-captured** (when enabled): views, resources, user actions, errors, long tasks
+- **Manual capture in this app**:
+  - `rum.addError(error, context?)` (used by `ErrorBoundary` and for handled errors)
+  - `rum.addAction(name, context?)` (used on request submit)
+  - `rum.addTiming(name, time?)` (used on request submit)
+- **JSX/HTML instrumentation**:
+  - `data-dd-action-name='...'` on an element (or parent) names the captured click action
 
+Where it shows up:
+- RUM actions/errors/timings show up under **RUM Explorer / Session Explorer**
 
-This repo generates a version `00` `traceparent` value and injects it via a `fetch` wrapper so we can inspect the exact header value used for a specific submission.
+## Datadog Logs (Logs / Log Explorer)
 
+Logs are initialized in `src/telemetry/datadogLogs.ts` and exposed via `src/telemetry/logs.ts`.
 
-The app:
+- `log.debug/info/warn/error(...args)` always logs to the local console
+- Remote sending goes to Datadog Logs and is filtered by `remoteLogLevel` (default `'info'`)
+- `localOnly: true` disables remote log sending
 
-- generates a `traceparent`
-- sends `POST /api/requests` with `traceparent` injected
-- displays the exact `traceparent` used for that submission
-- uses ErrorBoundaries to catch react element errors
+Where it shows up:
+- Remote log events show up under **Logs (Log Explorer)** (not under RUM)
 
+## W3C Trace Context (`traceparent`)
 
-RUM is intentionally a no-op unless configured via env vars.
+This app generates a version `00` `traceparent` and injects it via `fetchWithTrace`:
 
-Set these for Vite (for example in `.env.local`):
+- `src/telemetry/w3cTraceContext.ts` generates `traceparent`
+- `src/api/fetchWithTrace.ts` sets the `traceparent` header
+- UI displays the exact `traceparent` for the last submission attempt
+
+If RUM is enabled, `allowedTracingUrls` is scoped to same-origin `/api/*` so first-party tracing stays scoped.
+
+## Setup (Vite env vars)
+
+RUM is a no-op unless these are set:
 
 ```bash
 VITE_DD_RUM_APPLICATION_ID=...
@@ -38,10 +55,20 @@ VITE_DD_ENV=local
 VITE_DD_VERSION=0.1.0
 ```
 
-## Possible future improvements
+Logs are a no-op unless a logs token is set (or you reuse the RUM client token for the demo):
 
-- Add a tiny local dev proxy (`/api/*`) so the happy-path response is testable without changing the client call site.
-- Include `tracestate` propagation when we have upstream vendors that rely on it.
-- Add tests around `traceparent` format and header injection to prevent regressions.
+```bash
+VITE_DD_LOGS_CLIENT_TOKEN=... # optional; falls back to VITE_DD_RUM_CLIENT_TOKEN
+```
+
+Telemetry init happens in `src/main.tsx` via `src/telemetry/telemetry.ts` (`initTelemetry()`).
+
+## Dev / test
+
+```bash
+npm install
+npm run dev
+npm test
+```
 
 

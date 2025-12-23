@@ -1,4 +1,4 @@
-import { datadogRum } from "@datadog/browser-rum";
+import { datadogRum } from '@datadog/browser-rum';
 
 declare global {
   interface Window {
@@ -16,7 +16,7 @@ type RumConfig = {
 };
 
 function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function readRumConfig(): RumConfig | null {
@@ -46,8 +46,8 @@ export function initDatadogRum(): void {
   datadogRum.init({
     applicationId: cfg.applicationId,
     clientToken: cfg.clientToken,
-    site: cfg.site ?? "datadoghq.com",
-    service: cfg.service ?? "react-observability",
+    site: cfg.site ?? 'datadoghq.com',
+    service: cfg.service ?? 'react-observability',
     env: cfg.env,
     version: cfg.version,
     sessionSampleRate: 100,
@@ -55,21 +55,26 @@ export function initDatadogRum(): void {
     trackResources: true,
     trackLongTasks: true,
     trackUserInteractions: true,
-    defaultPrivacyLevel: "mask-user-input",
+    defaultPrivacyLevel: 'mask-user-input',
     allowedTracingUrls: [apiOnThisOrigin],
   });
   window.__ddRumInitialized = true;
 }
 
-export function reportError(error: unknown, context?: Record<string, unknown>): void {
-  if (!window.__ddRumInitialized) {
-    // eslint-disable-next-line no-console
-    console.error("Unhandled error", error, context);
-    return;
-  }
-
+export function addError(error: unknown, context?: Record<string, unknown>): void {
+  if (!window.__ddRumInitialized) return;
   const err = error instanceof Error ? error : new Error(String(error));
   datadogRum.addError(err, context);
+}
+
+export function addAction(name: string, context?: Record<string, unknown>): void {
+  if (!window.__ddRumInitialized) return;
+  datadogRum.addAction(name, context);
+}
+
+export function addTiming(name: string, time?: number): void {
+  if (!window.__ddRumInitialized) return;
+  datadogRum.addTiming(name, time);
 }
 
 

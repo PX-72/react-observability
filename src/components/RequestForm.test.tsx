@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RequestForm } from "./RequestForm";
 
 vi.mock("../telemetry/w3cTraceContext", () => ({
@@ -19,6 +19,22 @@ vi.mock("../api/fetchWithTrace", () => ({
 const { fetchWithTrace } = await import("../api/fetchWithTrace");
 
 describe("RequestForm", () => {
+  let infoSpy: ReturnType<typeof vi.spyOn>;
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    infoSpy.mockRestore();
+    warnSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
+
   it("disables submit until request name is provided", async () => {
     const user = userEvent.setup();
     render(<RequestForm />);
