@@ -2,7 +2,6 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { fetchWithTrace } from '../api/fetchWithTrace';
 import { log } from '../telemetry/logs';
 import { rum } from '../telemetry/rum';
-import { generateTraceparent } from '../telemetry/w3cTraceContext';
 
 type OperationType = 'create' | 'update' | 'delete';
 type Priority = 'low' | 'normal' | 'high';
@@ -48,21 +47,10 @@ export function RequestForm() {
     e.preventDefault();
     if (!validation.isValid) return;
 
-    const { traceparent } = generateTraceparent();
-    setSubmitState({ kind: 'submitting', traceparent });
-
-    rum.addAction('submit_request', {
-      traceparent,
-      requestName: form.requestName.trim(),
-      operation: form.operationType,
-      priority: form.priority,
-      includeDebugMetadata: form.includeDebugMetadata,
-    });
-    rum.addTiming('submit_request_start');
-    log.info('Submitting request', { traceparent, operation: form.operationType, priority: form.priority });
+    let traceparentForThisAttempt: string | null = null;
 
     try {
-      const { response } = await fetchWithTrace(
+      const { response, traceparent } = await fetchWithTrace(
         '/api/requests',
         {
           method: 'POST',
@@ -76,7 +64,22 @@ export function RequestForm() {
             clientTimestamp: new Date().toISOString(),
           }),
         },
-        { traceparent },
+        {
+          onTraceparent: (tp) => {
+            traceparentForThisAttempt = tp;
+            setSubmitState({ kind: 'submitting', traceparent: tp });
+
+            rum.addAction('submit_request', {
+              traceparent: tp,
+              requestName: form.requestName.trim(),
+              operation: form.operationType,
+              priority: form.priority,
+              includeDebugMetadata: form.includeDebugMetadata,
+            });
+            rum.addTiming('submit_request_start');
+            log.info('Submitting request', { traceparent: tp, operation: form.operationType, priority: form.priority });
+          },
+        },
       );
 
       if (!response.ok) {
@@ -95,10 +98,11 @@ export function RequestForm() {
       log.info('Request succeeded', { traceparent, status: response.status });
       setSubmitState({ kind: 'success', traceparent, status: response.status });
     } catch (err) {
-      rum.addError(err, { traceparent });
-      log.error(err, { traceparent });
+      const tp = traceparentForThisAttempt ?? 'unknown';
+      rum.addError(err, { traceparent: tp });
+      log.error(err, { traceparent: tp });
       const message = err instanceof Error ? err.message : 'Request failed.';
-      setSubmitState({ kind: 'error', traceparent, message });
+      setSubmitState({ kind: 'error', traceparent: tp, message });
     }
   }
 

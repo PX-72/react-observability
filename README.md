@@ -38,7 +38,7 @@ This app generates a version `00` `traceparent` and injects it via `fetchWithTra
 
 - `src/telemetry/w3cTraceContext.ts` generates `traceparent`
 - `src/api/fetchWithTrace.ts` sets the `traceparent` header
-- UI displays the exact `traceparent` for the last submission attempt
+- UI displays the exact `traceparent` for the last submission attempt (observed via `onTraceparent`, not generated in the component)
 
 If RUM is enabled, `allowedTracingUrls` is scoped to same-origin `/api/*` so first-party tracing stays scoped.
 
